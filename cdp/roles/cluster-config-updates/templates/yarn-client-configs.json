@@ -1,0 +1,19 @@
+{
+  "name" : "yarn-GATEWAY-BASE",
+  "displayName" : "Gateway Default Group",
+  "roleType" : "GATEWAY",
+  "base" : true,
+  "serviceRef" : {
+    "clusterName" : "{{ cod_datahub_name }}",
+    "serviceName" : "yarn"
+  },
+  "config" : {
+    "items" : [ {
+      "name" : "mapreduce_client_config_safety_valve",
+      "value" : "<property><name>yarn.app.mapreduce.am.job.client.port-range</name><value>32000-32100</value><final>true</final></property>"
+    }, {
+      "name" : "yarn_client_config_safety_valve",
+      "value" : "<property><name>yarn.app.mapreduce.am.job.client.port-range</name><value>32000-32100</value><final>true</final></property>"
+    } ]
+  }
+}
