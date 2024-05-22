@@ -1,0 +1,145 @@
+---  
+- name: Update HBase service configuration for cod-s3
+  ansible.builtin.uri:
+    url: "https://{{ cm_server_fqdn }}:7183/api/v49/clusters/{{ cod_datahub_name }}/services/hbase/config"
+    method: PUT
+    headers:
+      "Content-Type": "application/json"
+    validate_certs: no
+    user: "{{ api_username }}"
+    password: "{{ api_password }}"
+    body_format: json
+    body: "{{ lookup('template', 'hbase-s3-service-configs.json' ) }}"
+    force_basic_auth: yes
+  register: api_response
+  when: "'s3' in cod_database_type"
+
+- name: Display API Response
+  debug:
+    var: api_response.json
+    
+- name: Update HBase service configuration cod-hdfs
+  ansible.builtin.uri:
+    url: "https://{{ cm_server_fqdn }}:7183/api/v49/clusters/{{ cod_datahub_name }}/services/hbase/config"
+    method: PUT
+    headers:
+      "Content-Type": "application/json"
+    validate_certs: no
+    user: "{{ api_username }}"
+    password: "{{ api_password }}"
+    body_format: json
+    body: "{{ lookup('template', 'hbase-hdfs-service-configs.json' ) }}"
+    force_basic_auth: yes
+  register: api_response
+  when: "'hdfs' in cod_database_type"
+  
+- name: Display API Response
+  debug:
+    var: api_response.json
+    
+- name: Update HBase GATEWAY-BASE Configs
+  ansible.builtin.uri:
+    url: "https://{{ cm_server_fqdn }}:7183/api/v49/clusters/{{ cod_datahub_name }}/services/hbase/roleConfigGroups/hbase-GATEWAY-BASE/config"
+    method: PUT
+    headers:
+      "Content-Type": "application/json"
+    validate_certs: no
+    user: "{{ api_username }}"
+    password: "{{ api_password }}"
+    body_format: json
+    body: |
+     {
+       "items": [
+       {
+         "name": "hbase_client_scanner_timeout_period",
+         "value": 600000
+       }
+      ]
+     }
+    force_basic_auth: yes
+  register: api_response
+
+- name: Display API Response
+  debug:
+    var: api_response.json
+
+- name: Update HBase Regionserver Configs for cod-s3
+  ansible.builtin.uri:
+    url: "https://{{ cm_server_fqdn }}:7183/api/v49/clusters/{{ cod_datahub_name }}/services/hbase/roleConfigGroups/hbase-REGIONSERVER-BASE/config"
+    method: PUT
+    headers:
+      "Content-Type": "application/json"
+    validate_certs: no
+    user: "{{ api_username }}"
+    password: "{{ api_password }}"
+    body_format: json
+    body: |
+     {
+        "items": [
+        {
+          "name": "hbase_regionserver_lease_period",
+          "value": 600000
+        }
+      ]
+     }
+    force_basic_auth: yes  
+  register: api_response
+  when: "'s3' in cod_database_type"
+
+- name: Display API Response
+  debug:
+    var: api_response.json
+    
+- name: Update HBase Regionserver Configs cod-hdfs
+  ansible.builtin.uri:
+    url: "https://{{ cm_server_fqdn }}:7183/api/v49/clusters/{{ cod_datahub_name }}/services/hbase/roleConfigGroups/{{ item }}/config"
+    method: PUT
+    headers:
+      "Content-Type": "application/json"
+    validate_certs: no
+    user: "{{ api_username }}"
+    password: "{{ api_password }}"
+    body_format: json
+    body: |
+     {
+        "items": [
+        {
+          "name": "hbase_regionserver_lease_period",
+          "value": 600000
+        }
+      ]
+     }
+    force_basic_auth: yes
+  loop:
+    - hbase-REGIONSERVER-BASE
+    - hbase-REGIONSERVER-worker
+    - hbase-REGIONSERVER-compute  
+  register: api_response
+  when: "'hdfs' in cod_database_type"
+
+- name: Display API Response
+  debug:
+    var: api_response.json
+    
+- name: Trigger Stale Services Restart
+  ansible.builtin.uri:
+    url: "https://{{ cm_server_fqdn }}:7183/api/v49/clusters/{{ cod_datahub_name }}/commands/restart"
+    method: POST
+    headers:
+      "Content-Type": "application/json"
+    validate_certs: no
+    user: "{{ api_username }}"
+    password: "{{ api_password }}"
+    body_format: json
+    body: |
+     {
+       "restartOnlyStaleServices": true,
+       "redeployClientConfiguration": true,
+       "restartServiceNames": [ "hbase", "hue" , "omid" , "phoenix"]
+     }
+    force_basic_auth: yes
+  register: deployment_response
+
+- name: Display Deployment Response
+  debug:
+    var: deployment_response.json
