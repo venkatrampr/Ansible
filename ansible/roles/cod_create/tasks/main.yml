@@ -9,7 +9,7 @@
     volume_string: "volumeType=SSD"
   when: STORAGE_TYPE == "CLOUD_WITH_EPHEMERAL"
   
-- name: Create COD Cluster
+- name: Create Cloudera Operation Database Cluster
   ansible.builtin.shell: |
     cdp opdb create-database --environment-name cdp-{{ ENV }}-cdp --database-name {{ DBNAME }} --scale-type {{ SCALE_SIZE }} \
     --image id={{ image_id }},catalog={{ catalog }} --storage-type {{ STORAGE_TYPE }} \
