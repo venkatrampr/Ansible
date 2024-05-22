@@ -1,0 +1,5 @@
+env: "{{ ENV }}"
+dbname: "{{ DBNAME }}"
+scale: "{{ SCALE_SIZE }}"
+storage: "{{ STORAGE_TYPE }}"
+recipe: "enableimdsv2,setec2name"
