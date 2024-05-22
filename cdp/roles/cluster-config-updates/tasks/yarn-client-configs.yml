@@ -1,0 +1,34 @@
+---  
+- name: Update YARN Client Configs
+  ansible.builtin.uri:
+    url: "https://{{ cm_server_fqdn }}:7183/api/v49/clusters/{{ cod_datahub_name }}/services/yarn/roleConfigGroups/yarn-GATEWAY-BASE"
+    method: PUT
+    headers:
+      "Content-Type": "application/json"
+    validate_certs: no
+    user: "{{ api_username }}"
+    password: "{{ api_password }}"
+    body_format: json
+    body: "{{ lookup('template', 'yarn-client-configs.json' ) }}"
+    force_basic_auth: yes
+  register: api_response
+
+- name: Display API Response
+  debug:
+    var: api_response.json
+
+- name: Trigger Yarn Client Configuration Deployment
+  ansible.builtin.uri:
+    url: "https://{{ cm_server_fqdn }}:7183/api/v49/clusters/{{ cod_datahub_name }}/services/yarn/commands/deployClientConfig"
+    method: POST
+    headers:
+      "Content-Type": "application/json"
+    validate_certs: no
+    user: "{{ api_username }}"
+    password: "{{ api_password }}"
+    force_basic_auth: yes
+  register: deployment_response
+
+- name: Display Deployment Response
+  debug:
+    var: deployment_response.json
