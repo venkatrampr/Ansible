@@ -1,0 +1,65 @@
+---
+trigger: none
+
+parameters:
+- name: environment
+  type: string
+  values:
+  - sandbox
+  - dev
+  - test
+  - prod
+- name: cod_database_name
+  type: string
+- name: storage_type
+  type: string
+  values:
+  - HDFS
+  - CLOUD_WITH_EPHEMERAL
+- name: scale_size
+  type: string
+  values:
+  - LIGHT
+  - HEAVY
+- name: Minimum_Worker_Nodes
+  type: number
+- name: Maximum_Worker_Nodes
+  type: number  
+
+variables:
+- name: ENV
+  value: ${{ parameters.environment }}
+- name: REGION
+  value: 'us-east-1'
+- name: DBNAME
+  value: ${{ parameters.cod_database_name }}
+- name: MIN_WORKERS
+  value: ${{ parameters.Minimum_Worker_Nodes }}
+- name: MAX_WORKERS
+  value: ${{ parameters.Maximum_Worker_Nodes }}
+- name: STORAGE_TYPE
+  value: ${{ parameters.storage_type }}
+- name: SCALE_SIZE
+  value: ${{ parameters.scale_size }}
+- name: azdo_pool
+  value: 'infra.${{ parameters.environment }}.pool'
+
+
+stages:
+- stage: Run_COD_Install
+  pool: $(azdo_pool)
+  displayName: 'Create COD Cluster in - ${{ parameters.environment }}'
+  jobs:
+  - job: runAnsible
+    timeoutInMinutes: 180
+    displayName: 'Run Ansible'
+    steps:
+    - task: AWSShellScript@1
+      displayName: 'Run COD install playbook'
+      inputs:
+        awsCredentials: 'aws-${{ parameters.environment }}-cred'
+        regionName: '${{ variables.REGION }}'
+        scriptType: 'inline'
+        inlineScript: |
+          cd ansible;
+          ansible-playbook -e ENV=$(ENV) -e "REGION=${{ variables.REGION }}" -e DBNAME=$(DBNAME) -e STORAGE_TYPE=$(STORAGE_TYPE) -e SCALE_SIZE=$(SCALE_SIZE) -e MIN_WORKERS=$(MIN_WORKERS) -e MAX_WORKERS=$(MAX_WORKERS) -e edge_node_count=$(edge_node_count) -e @vars.yml --connection=local cod-create-playbook.yml
