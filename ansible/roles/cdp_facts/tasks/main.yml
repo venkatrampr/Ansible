@@ -1,0 +1,31 @@
+---
+- name: Get CDP Runtime image id from AWS Parameter store
+  ansible.builtin.shell: |
+    aws ssm get-parameters --names '/{{ ENV }}/cdp/env_image' --with-decryption --query 'Parameters[0].Value' --output text --region {{ REGION }}
+  register: image_id
+  changed_when: false
+
+- name: Get CDP CDP Image Catalog from AWS Parameter store
+  ansible.builtin.shell: |
+    aws ssm get-parameters --names '/{{ ENV }}/cdp/catalog' --with-decryption --query 'Parameters[0].Value' --output text --region {{ REGION }}
+  register: catalog
+  changed_when: false
+
+- name: Get CDP Machine User from AWS Parameter store
+  ansible.builtin.shell: |
+    aws ssm get-parameters --names '/{{ ENV }}/cdp/machine_user' --with-decryption --query 'Parameters[0].Value' --output text --region {{ REGION }}
+  register: api_username
+  changed_when: false
+
+- name: Get CDP Machine User Password from AWS Parameter store
+  ansible.builtin.shell: |
+    aws ssm get-parameters --names '/{{ ENV }}/cdp/machine_user_password' --with-decryption --query 'Parameters[0].Value' --output text --region {{ REGION }}
+  register: api_password
+  changed_when: false
+  
+- name: Set facts for API credentials
+  ansible.builtin.set_fact:
+    image_id: "{{ image_id.stdout }}"
+    catalog: "{{ catalog.stdout }}"
+    api_username: "{{ api_username.stdout }}"
+    api_password: "{{ api_password.stdout }}"
