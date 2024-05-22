@@ -16,7 +16,7 @@
     --auto-scaling-parameters minWorkersForDatabase={{ MIN_WORKERS }},maxWorkersForDatabase={{ MAX_WORKERS }} \
     --attached-storage-for-workers {{ volume_string }} \
     --num-edge-nodes {{ edge_node_count }} \
-    --recipes names={{ recipe }},instanceGroup=WORKER names={{ recipe_gateway }},instanceGroup=GATEWAY names={{ recipe }},instanceGroup=LEADER names={{ recipe }},instanceGroup=MASTER names={{ recipe_edge }},instanceGroup=EDGE \
+    --recipes names={{ recipe }},instanceGroup=WORKER names={{ recipe }},instanceGroup=GATEWAY names={{ recipe }},instanceGroup=LEADER names={{ recipe }},instanceGroup=MASTER \
     --enable-grafana
   register: cod_install
     
