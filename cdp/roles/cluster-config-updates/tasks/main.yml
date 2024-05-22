@@ -1,0 +1,36 @@
+--- 
+- name: Get COD Datahub Name
+  ansible.builtin.shell: |
+    cdp opdb describe-database --environment cdp-{{ ENV }}-cdp --database-name {{ DBNAME }} | jq -r '.databaseDetails.internalName'
+  register: cod_datahub_name
+  changed_when: false
+  
+- name: Set Datahub fact
+  ansible.builtin.set_fact:
+    cod_datahub_name: "{{ cod_datahub_name.stdout }}"
+    
+- name: Get COD Datahub CM Server FQDN
+  ansible.builtin.shell: |
+    cdp datahub describe-cluster --cluster-name {{ cod_datahub_name }} | jq -r '.cluster.instanceGroups[].instances[] | select(.clouderaManagerServer == true) | .fqdn'            
+  register: cm_server_fqdn
+  changed_when: false
+  
+- name: Set CM Server fact
+  ansible.builtin.set_fact:
+    cm_server_fqdn: "{{ cm_server_fqdn.stdout }}"
+
+- name: Get Database type(s3 or hdfs)
+  ansible.builtin.shell: |
+    cdp opdb describe-hbase-configuration --environment cdp-{{ ENV }}-cdp --database {{ DBNAME }} --configuration-type SERVICE --configuration-name ranger_plugin_service_name | jq -r '.configuration.value'            
+  register: cod_database_type
+  changed_when: false
+
+- name: Set Database type(s3 or hdfs) fact
+  ansible.builtin.set_fact:
+    cod_database_type: "{{ cod_database_type.stdout }}"
+    
+- name: Run Yarn Client Configs Update
+  include_tasks: yarn-client-configs.yml
+
+- name: Run HBase Service Configs Update
+  include_tasks: hbase-service-configs.yml
