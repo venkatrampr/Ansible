@@ -4,4 +4,4 @@
   roles:
     - role: cdp_facts
     - role: cod_create
-    - role: cm_config_updates
+    - role: cluster_config_updates
