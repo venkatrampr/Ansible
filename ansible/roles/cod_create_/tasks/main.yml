@@ -1,0 +1,35 @@
+---    
+- name: Set storage for workers Fact (Storage Type = HDFS)
+  ansible.builtin.set_fact:
+    volume_string: "volumeCount=4,volumeSize=1024,volumeType=SSD"
+  when: STORAGE_TYPE == "HDFS"
+
+- name: Set storage for workers Fact (Storage Type = S3)
+  ansible.builtin.set_fact:
+    volume_string: "volumeType=SSD"
+  when: STORAGE_TYPE == "CLOUD_WITH_EPHEMERAL"
+  
+- name: Create COD Cluster
+  ansible.builtin.shell: |
+    cdp opdb create-database --environment-name cdp-{{ ENV }}-cdp --database-name {{ DBNAME }} --scale-type {{ SCALE_SIZE }} \
+    --image id={{ image_id }},catalog={{ catalog }} --storage-type {{ STORAGE_TYPE }} \
+    --auto-scaling-parameters minWorkersForDatabase={{ MIN_WORKERS }},maxWorkersForDatabase={{ MAX_WORKERS }},minComputeNodesForDatabase=5,maxComputeNodesForDatabase=10,maxCpuUtilization=60,evaluationPeriod=300 \
+    --attached-storage-for-workers {{ volume_string }} \
+    --num-edge-nodes {{ edge_node_count }} \
+    --recipes names={{ recipe }},instanceGroup=WORKER names={{ recipe_gateway }},instanceGroup=GATEWAY names={{ recipe }},instanceGroup=LEADER names={{ recipe }},instanceGroup=MASTER names={{ recipe_edge }},instanceGroup=EDGE \
+    --enable-grafana
+  register: cod_install
+    
+- debug: msg="{{ cod_install.stdout }}"
+  when: cod_install is changed 
+
+- name: "Wait for COD = AVAILABLE"
+  ansible.builtin.shell: |
+    cdp opdb describe-database --environment cdp-{{ ENV }}-cdp --database-name {{ DBNAME }} | jq -r '.databaseDetails.status'
+  register: cod_build
+  changed_when: false
+  retries: 120
+  delay: 60
+  until: cod_build.stdout == 'AVAILABLE'
+
+- debug: msg="{{ cod_build.stdout }}"
