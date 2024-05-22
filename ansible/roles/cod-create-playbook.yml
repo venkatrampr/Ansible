@@ -1,0 +1,7 @@
+---
+- name: Run COD install
+  hosts: 127.0.0.1
+  roles:
+    - role: cdp_facts
+    - role: cod_create
+    - role: cm_config_updates
